@@ -50,7 +50,7 @@ function dx=model_clamping(t,x)
    dx=model_air(t,[alpha,omega,theta],u+disturbance);
 
    % Розширення моделі системи з урахуванням PID
-   dx(4)=KI*err;
+   dx(4)=err;
 
 end;
 
