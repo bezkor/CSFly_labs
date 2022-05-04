@@ -1,7 +1,6 @@
-%
-clear classes
-global disturbance
+% Дослідження траекторії руху ЛА
 
+clear all
 
 % Формування польотного плану
 flight_plan_x=[0 250 750 1250 1500]
