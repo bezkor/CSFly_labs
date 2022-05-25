@@ -1,14 +1,18 @@
 % Дослідження траекторії руху ЛА
 
+% Очистка змінних середовища
 clear all
-
-% Формування польотного плану
-flight_plan_x=[0 250 750 1250 1500]
-flight_plan_y=[0 0 500 0 0]
-
+ode_opts = odeset('MaxStep',1e0);
 tflight=[0:1:800];
+
+% Проміжні точки маршруту
+flight_plan_x=[0 250 750 1250 1500]
+flight_plan_y=[0 0   500 0    0]
+
+% Стартова позиція
 start_pos=[flight_plan_x(1),flight_plan_y(1),0];
 
+% Формування польотного плану
 flight_plan=zeros(1,4);
 for i=1:length(flight_plan_x)-1,
   flight_plan(i,:)=[flight_plan_x(i),...
@@ -24,12 +28,14 @@ end;
 disturbance = @(t) [0,0,0]';
 
 % Польот на ППМ
-sim_model_direct=@(t,x) model_direct(t,x,flight_plan,disturbance)
-[t,y_direct]=ode45(sim_model_direct,tflight,start_pos);
+clear model_direct;
+sim_model_direct=@(t,x) model_direct(t,x,flight_plan,disturbance);
+[t,y_direct]=ode45(sim_model_direct,tflight,start_pos,ode_opts);
 
 % Польот за ЛЗШ
-sim_model_angle=@(t,x) model_angle(t,x,flight_plan,disturbance)
-[t,y_angle]=ode45(sim_model_angle,tflight,start_pos);
+clear model_angle;
+sim_model_angle=@(t,x) model_angle(t,x,flight_plan,disturbance);
+[t,y_angle]=ode45(sim_model_angle,tflight,start_pos,ode_opts);
 
 % Виконати коррекцію польотного плану:
 % - розрахувати мінімальний радіус повороту
@@ -37,12 +43,48 @@ sim_model_angle=@(t,x) model_angle(t,x,flight_plan,disturbance)
 % - провести симуляцію за скорегованим планом польоту
 % - порівняти результати симуляції
 
+% Корекція польотного плану
+flight_plan_corr = flight_plan;
+
+
+% Моделювання за скорегованим планом польоту
+
+% Польот за ЛЗШ
+clear model_angle;
+sim_model_angle_corr=@(t,x) model_angle(t,x,flight_plan_corr,disturbance)
+[t,y_angle_corr]=ode45(sim_model_angle_corr,tflight,start_pos,ode_opts);
+
 % Візуалізація виконання польотного плану
 figure(1)
-plot(flight_plan_x,flight_plan_y,'b.--','LineWidth',1,...
-     y_direct(:,1),y_direct(:,2),'r-','LineWidth',2,...
-     y_angle(:,1),y_angle(:,2),'g-','LineWidth',2);
+plot(y_direct(:,1),y_direct(:,2),'r-','LineWidth',2,...
+     y_angle(:,1),y_angle(:,2),'g-','LineWidth',2,...
+     flight_plan(:,[1,3])',flight_plan(:,[2,4])','b*--','LineWidth',1);
 axis equal
 grid on
-legend('План польоту','Польот на ППМ','Польот за ЛЗШ');
+legend('Польот на ППМ','Польот за ЛЗШ','План польоту');
+title('Порівняння траекторій польоту за ППМ та ЛЗШ');
+
+figure(2)
+plot(y_direct(:,1),y_direct(:,2),'r-','LineWidth',2,...
+     y_angle_corr(:,1),y_angle_corr(:,2),'g-','LineWidth',2,...
+     flight_plan_corr(:,[1,3])',flight_plan_corr(:,[2,4])','b*--','LineWidth',1);
+axis equal
+grid on
+legend('Польот на ППМ','Польот на ЛЗШ (скоригований)','План польоту');
+title('Порівняння траекторій польоту за ППМ та ЛЗШ');
+
+figure(3)
+plot(y_angle(:,1),y_angle(:,2),'r-','LineWidth',2,...
+     y_angle_corr(:,1),y_angle_corr(:,2),'g-','LineWidth',2,...
+     flight_plan_corr(:,[1,3])',flight_plan_corr(:,[2,4])','b*--','LineWidth',1);
+axis equal
+grid on
+legend('Польот за ЛЗШ','Польот за ЛЗШ (скоригований)','План польоту');
+title('Порівняння траекторій польоту за ЛЗШ');
+
+
+
+
+
+
 
